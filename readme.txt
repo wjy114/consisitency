@@ -4,5 +4,6 @@ COME ON!!
 !me
 wonderful
 congrutulation
-git tracks changes of files.
-fix 3
+git tracks changes of fil
+fi1fixbug
+
