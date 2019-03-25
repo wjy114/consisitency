@@ -2,36 +2,33 @@
 #include <string.h>
 #define SS {87}
 
-	struct ainfo{
-		int a;
-        	int b;
-        	char *c;
-		char *d;
+struct ainfo{
+	int a;
+       	int b;
+	char *d;
 	};
+
 struct ainfo **mm;
 struct ainfo *m;
 
 struct ainfo* bb(){
 	int S=7;
-	mm=(char *)malloc(sizeof(struct ainfo *));
+	mm=(struct ainfo*)malloc(sizeof(struct ainfo *));
       	if(mm=0){
              return 0;
       	}
         m=(struct ainfo*)malloc(sizeof(struct ainfo));
         if(m=0){
                return 0;
-        }
+	}
 
-//struct ainfo *aa;
-const struct ainfo inf={
+	const struct ainfo m={
 		.a=7,
 		.b=6,
-		.d=&inf.b
+		.d=&m.b
 	};
-m->a= inf.a;
-m->b= inf.b;
-m->d= inf.d;
-return m;
+	mm = &m;
+	return *mm;
 }
 
 
