@@ -25,11 +25,11 @@ static DEFINE_MUTEX(device_mutex);
 static LIST_HEAD(device_list);
 static LIST_HEAD(client_list);
 
-static void dnova_ib_add_one(struct ib_device *device) {}
+static void dnova_ib_add_one(struct ib_device *device) {};
 
-static void dnova_ib_remove_one(struct ib_device *device, void *client_data) {}
+static void dnova_ib_remove_one(struct ib_device *device, void *client_data) {};
 
-static void dnova_ib_release_dev(struct device *dev) {}
+static void dnova_ib_release_dev(struct device *dev) {};
 
 struct ib_client dn_ib_client = {.name = "dnova_ib_client",
 				 .add = dnova_ib_add_one,
