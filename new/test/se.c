@@ -52,7 +52,9 @@ static int __init d_rdma_init_module(void)
         return ret;
     }
 
-    ret = ib_query_port(d_dev, ib_port, ddpfs_ctx->port_attr)
+    ret = d_ib_query_port(d_dev, ib_port, ddpfs_ctx->port_attr)；
+
+    ret = ddpfs_setup_local_memory（ddpfs_ctx）;
 
 }
 
