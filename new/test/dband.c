@@ -223,7 +223,7 @@ out:
         rdma_destory_id(ctx->listen_cm_id);
     return ret;
 }
-static void dnova_ib_cq_event_handler(struct ib_event *event, void *data)
+static void ddpfs_ib_cq_event_handler(struct ib_event *event, void *data)
 {
 
 }
