@@ -120,12 +120,116 @@ int est_listen (dctx *ctx)
 }
 
 //创建pq
-int ddpfs_create_id(dctx ctx)
+int ddpfs_create_id(dctx *ctx)
 {
     int ret;
-    ctx->
+    ctx->listen_cm_id = rdma_create_id(&init_net, ddpfs_cma_handler, ctx, RDMA_PS_TCP, IB_QPT_RC);
+    if(IS_ERR(ctx->listen_cm_id)){
+        p_err("error to rdma_create_id");
+        return -EINVAL;
+    }
+return 0;
 }
-int ddpfs_creat_qp(dctx *ctx)
+
+int ddpfs_cma_handler(struct rdma_cm_id *id, struct rdma_cm_event *event)
+{
+    int ret;
+    dctx *ctx = id->context;
+
+    p_pri("cma_event type %d id %p (%s)", event->event, id, (id==ctx->listen_cm_id) ? "self" : "connect");
+
+    switch (event->event){
+        case RDMA_CM_EVENT_ADDR_RESOLVED:
+            ctx->state = ADDR_RESOLVED;
+            ret = rdma_resolve_route(id, 2000);
+            if(ret){
+                p_err("rdma_resolve_route error");
+        	    wake_up_interruptible(&ctx->ctl_wq);
+		    }
+		    break;
+
+	    case RDMA_CM_EVENT_ROUTE_RESOLVED:
+		    ctx->state = ROUTE_RESOLVED;
+		    wake_up_interruptible(&ctx->ctl_wq);
+		    break; 
+        case RDMA_CM_EVENT_CONNECT_REQUEST:
+		    ctx->state = CONNECT_REQUEST;
+		    ctx->peer_cm_id = id;
+		    p_pri("CONNECT_REQUEST %p", ctx->peer_cm_id);
+            wake_up_interruptible(&ctx->ctl_wq);
+	    	break;
+
+	    case RDMA_CM_EVENT_ESTABLISHED:
+		    p_pri("ESTABLISHED");
+		    ctx->state = CONNECTED;
+		    wake_up_interruptible(&ctx->ctl_wq);
+		    break;
+
+	    case RDMA_CM_EVENT_ADDR_ERROR:
+	    case RDMA_CM_EVENT_ROUTE_ERROR:
+	    case RDMA_CM_EVENT_CONNECT_ERROR:
+	    case RDMA_CM_EVENT_UNREACHABLE:
+	    case RDMA_CM_EVENT_REJECTED:
+		    p_pri("RDMA_CM_EVENT_REJECTED, event %d, previous status %d",
+						 event->event, event->status);
+		    ctx->state = ERROR_STATE;
+		    wake_up_interruptible(&ctx->ctl_wq);
+		    break;
+	    case RDMA_CM_EVENT_TIMEWAIT_EXIT:
+	    case RDMA_CM_EVENT_DISCONNECTED:
+
+		    ctx->state = DISCONNECT;
+		    wake_up_interruptible(&ctx->ctl_wq);
+		    break;
+
+	    case RDMA_CM_EVENT_DEVICE_REMOVAL:
+		    p_pri("DEVICE_REMOVAL");
+		    break;
+
+	    default:
+		    p_pri("Unexpected RDMA CM event %d!", event->event);
+		    wake_up_interruptible(&ctx->ctl_wq);
+		    break;
+	}
+	return 0;
+}
+
+int ddpfs_rdma_listen_init(dctx * ctx)
+{
+    struct sockaddr_in sin;
+    int ret;
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = (u32)hton1(INADDR_ANY);
+    sin.sin_port = (u16)htons(RDS_PORT);
+
+    ret = rdma_bind_addr(ctx->listen_cm_id, (struct sockaddr *)&sin);
+    if(ret){
+        p_err("failed to setup listener");
+        goto out;
+    }
+    ret = rdma_listen(ctx->listen_cm_id, 3);
+    if(ret){
+        p_err("failed to setup listener");
+        goto out;
+    }
+    wait_event_interruptible(ctx->ctl_wq, ctx->state >= CONNECT_REQUEST);
+	if (ctx->state != CONNECT_REQUEST) {
+		p_err("expect CONNECT_REQUEST, got %d", ctx->state);
+		return -1;
+	}
+    p_pri("cm %p listening on port %u\n",ctx->listen_cm_id,RDS_PORT);
+out:
+    if(ctx->listen_cm_id)
+        rdma_destory_id(ctx->listen_cm_id);
+    return ret;
+}
+static void dnova_ib_cq_event_handler(struct ib_event *event, void *data)
+{
+
+}
+
+
+int ddpfs_create_qp(dctx *ctx)
 {
 
 }
