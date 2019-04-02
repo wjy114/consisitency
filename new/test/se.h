@@ -27,20 +27,20 @@ typedef struct ddpfs_context dctx;
 
 struct ddpfs_context{
     struct ib_context *context;
-    enum ddpfs_state state;
+    enum ddpfs_state state;//1
     struct ib_cq *recv_cq;
     struct ib_cq *send_cq;
     struct ib_pd *ctx_pd; //1
     struct ib_qp *qp;
     wait_queue_head_t ctl_wq;
 
-    struct ib_port_attr *port_attr; //1
+    struct ib_port_attr *port_attr; //1//11
     //struct ib_mr *mr;
-    struct ddpfs_mem_info *m;
+    struct ddpfs_mem_info *m;//1
     struct ib_wc recv_wr;
     struct ib_wc send_wc;
 
-    struct rdma_cm_id *listen_cm_id;
+    struct rdma_cm_id *listen_cm_id;//1
     struct rdma_cm_id *peer_cm_id;//保存对方
     struct list_head list;
     union ddpfs_ops ops;
