@@ -205,14 +205,26 @@ int ddpfs_cma_handler(struct rdma_cm_id *id, struct rdma_cm_event *event)
 	}
 	return 0;
 }
+// copy addr and port
+int d_para_copy(dctx *ctx){
+    struct con* cont1;
+    cont1=(struct con*)kmalloc(sizeof(struct con),GFP_KERNEL);
+    strncpy(cont1->addr, "192.168.99.11", sizeof("192.168.99.11"));
+    cont1->port=21671;
+    in4_pton(cont1->addr, -1, ctx->addr, -1, NULL);
+    ctx->port-htons(cont1->port);
+}
 
 int ddpfs_rdma_listen_init(dctx * ctx)
 {
     struct sockaddr_in sin;
     int ret;
+    memset(&sin, 0, sizeof(struct sockaddr_in))
+
     sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = (u32)hton1(INADDR_ANY);
-    sin.sin_port = (u16)htons(RDS_PORT);
+
+    memcpy((void *)&sin.sin_addr.s_addr, ctx->addr, 4);
+    sin.sin_port = ctx->port;
 
     ret = rdma_bind_addr(ctx->listen_cm_id, (struct sockaddr *)&sin);
     if(ret){

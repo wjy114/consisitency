@@ -46,6 +46,11 @@ struct ddpfs_context{
     union ddpfs_ops ops;
 };
 
+struct con{
+        char *addr;
+        unsigned long port;
+};
+
 enum ddpfs_state{
     IDLE =1,
     CONNECT_REQUEST,
