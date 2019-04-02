@@ -27,6 +27,9 @@ struct ib_client ddpfs_ib_client = {
     .remove = ddpfs_ib_remove_one
 };
 
+
+//遗留问题
+
 int d_ib_query_port(struct ib_device *device, u8 port_num, struct ib_port_attr *port_attr)
 {
     int c;
@@ -53,7 +56,7 @@ int ddpfs_setup_mr(dctx *ctx)
     ctx->m->reg_wr.key = ctx->m->rdma_mr->rkey;
 
     ctx->m->rdma_buf = kzalloc(D_LOG_RDMA_REGION, GFP_KERNEL);
-    ctx->m->rdma_dma_addr = dma_map_single(ctx->pd->device->dma_device, ctx->m->rdma_buf,D_LOG_RDMA_REGION, DMA_BIDIRECTIONAL);
+    ctx->m->rdma_dma_addr = dma_map_single(ctx->pd->device->dma_device, ctx->m->rdma_buf, D_LOG_RDMA_REGION, DMA_BIDIRECTIONAL);
 
     sg_dma_address(&sg) = ctx->m->rdma_dma_addr;
     sg_dma_len(&sg) = D_LOG_RDMA_REGION;
@@ -92,6 +95,7 @@ int setup_mem(dctx *ctx){
     if(!ctx->m){
         return -ENOMEM;
     }
+    m = ctx->m;
     m->recv_pages = alloc_pages(GFP_KERNEL,9);
     if(!m->recv_pages){
         p_err("Fail to allocate pages for recv buf",0);
@@ -100,18 +104,26 @@ int setup_mem(dctx *ctx){
     m->recv_buf = page_address(m->recv_pages);
 
     m->recv_dma_addr = dma_map_single(ctx->pd->device->dma_device,m->recv_buf, 
-    D_RECV_ENTRY_SIZE * CQLENTH, DMA_BIDIRECTIONAL);
+    D_RECV_ENTRY_SIZE * CQLENTH, DMA_BIDIRECTIONAL);//map 一个处理器虚拟内存并能被设备访问，返回内存的物理地址
     p_pri("recv_buf vaddr %p ,dma %llx---%llx",ctx->recv_buf ,ctx->m->recv_dma_addr, ctx->m->recv_dma_addr+D_RECV_ENTRY_SIZE * CQLENTH);
 
   // 	dnova_post_recv_req(ctx, 0, D_RECV_ENTRY_SIZE, CQLENTH);
-    m->rdma_mr = ib_alloc_mr(ctx->pd, IB_MR_TYPE_MEM_REG, 4);
+    m->rdma_mr = ib_alloc_mr(ctx->pd, IB_MR_TYPE_MEM_REG, 4);//maximum sg entries available for registration 4
     m->reg_wr.wr_opcode = IB_WR_REG_MR;
     m->reg_wr.mr = m->rdma_mr;
     m->reg_wr.key = m->rdma_mr->rkey;
     m->reg_wr.access = IB_ACCRESS_REMOTE_WRITE | IB_ACCESS_LOCAL_WRITE;
-    if(!m->rdma_mr)
-}
+    if(IS_ERR(m->rdma_mr)){
+        p_err("rdma_mr failed");
+        goto bal;
+    }
+    return ddpfs_setup_mr(ctx);
 
+bal:
+    if(m->rdma_mr &&!IS_ERR(m->rdma_mr))
+        ib_dereg_mr(m->rdma_mr);
+    return ret;
+}
 //建立监听相关
 int est_listen (dctx *ctx)
 {
