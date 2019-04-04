@@ -20,12 +20,15 @@ typedef struct ddpfs_context dctx;
 #define D_RECV_ENTRY_SIZE 512
 #define	INADDR_ANY		((unsigned long int) 0x00000000)
 #define RDS_PORT 18733 //18464-18768
+#define DDPFS_SG_LIMIT 1
+
 #define p_err(string,args...)\
     do{printk(KERN_ERR "[Error]ddpfs:%s:%d:" string "\n",__FUNCTION__, __LINE__, ##args);}while(0)
 #define p_pri(string,args...)\
     do{printk(KERN_INFO "ddpfs:%s:%d:" string "\n", __FUNCTION__, __LINE__, ##args);}while(0)
 
 struct ddpfs_context{
+    bool cors;
     struct ib_context *context;
     enum ddpfs_state state;//1
     struct ib_cq *recv_cq;
